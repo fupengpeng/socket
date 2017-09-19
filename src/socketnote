@@ -1,0 +1,35 @@
+Socket方法
+getInetAddress();    　　远程服务端的IP地址
+getPort();    　　　　　　远程服务端的端口
+getLocalAddress()    　　本地客户端的IP地址
+getLocalPort()    　　　　本地客户端的端口
+getInputStream();    　获得输入流
+getOutStream();    　　获得输出流
+Socket状态
+isClosed();        　　　　//连接是否已关闭，若关闭，返回true；否则返回false
+isConnected();　　　　　　//如果曾经连接过，返回true；否则返回false
+isBound();        　　　　//如果Socket已经与本地一个端口绑定，返回true；否则返回false
+boolean isConnection=socket.isConnected() && !socket.isClosed();   //判断当前是否处于连接
+
+ServerSocket 的以下两个 get 方法可以分别获得服务器绑定的 IP 地址, 以及绑定的端口:
+public InetAddress getInetAddress();
+public int getLocalPort()
+
+socket服务端创建
+    1.创建ServerSocket，设置监听端口号：12345
+        ServerSocket ss = new ServerSocket(12345);
+    2. 使用while循环和ServerSocket的accept方法等待多个客户端连接，并为每个客户端开启一个线程来执行相关操作
+        // 等待客户连接 accept()
+        while (true) {
+        	// 创建用于管理客户端的收发数据的子线程类
+            // 开始接收客户端的连接
+            Socket socket = ss.accept();
+            /** 
+             * 我们的服务端处理客户端的连接请求是同步进行的， 每次接收到来自客户端的连接请求后， 
+             * 都要先跟当前的客户端通信完之后才能再处理下一个连接请求。 这在并发比较多的情况下会严重影响程序的性能， 
+             * 为此，我们可以把它改为如下这种异步处理与客户端通信的方式 
+             */  
+            // 每接收到一个Socket就建立一个新的线程来处理它  
+            new Thread(new ClientThread(socket)).start();  
+        }
+    3.
