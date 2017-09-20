@@ -1,4 +1,4 @@
-package com.jiudianlianxian.testsocket01;
+package com.jiudianlianxian.socket04;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -7,39 +7,23 @@ import java.io.Writer;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import javax.security.auth.login.LoginContext;
-
-/**
- * 
- * @Title: ChatroomServer3
- * @Description: 给此类一个描述
- * @Company: 济宁九点连线信息技术有限公司
- * @ProjectName: socket
- * @author fupengpeng
- * @date 2017年9月19日 下午2:20:40
- */
-public class ChatroomServer3 extends ServerSocket {  
+public class ChatroomServer extends ServerSocket {  
+	  
+    private static final int SERVER_PORT = 8899; // 服务端端口  
+    private static final String END_MARK = "quit"; // 退出聊天室标识  
+    private static final String VIEW_USER = "viewuser"; // 查看在线成员列表  
   
-    private static final int SERVER_PORT = 12371; // 服务端端口  
-    private static final String END_MARK = "quit"; // 断开连接标识  
-    private static final String VIEW_USER = "viewuser"; // 查看连接客户成员列表  
-  
-    private static List<String> portList = new CopyOnWriteArrayList<String>();  
+    private static List<String> userList = new CopyOnWriteArrayList<String>();  
     private static List<Task> threadList = new ArrayList<Task>(); // 服务器已启用线程集合  
-    private static Map<String, Task> threadMap = new HashMap<String,Task>(); //服务器已启用线程集合
-    private static BlockingQueue<String> msgQueue = new ArrayBlockingQueue<String>(500); // 存放消息的队列  
+    private static BlockingQueue<String> msgQueue = new ArrayBlockingQueue<String>(  
+            20); // 存放消息的队列  
   
-    public ChatroomServer3() throws Exception {  
+    public ChatroomServer() throws Exception {  
         super(SERVER_PORT);  
     }  
   
@@ -63,8 +47,9 @@ public class ChatroomServer3 extends ServerSocket {
             new Thread(new Task(socket)).start();  
         }  
     }  
-  
-    /** 
+ 
+
+	/** 
      * 从消息队列中取消息，再发送给聊天室所有成员 
      */  
     class PushMsgTask implements Runnable {  
@@ -74,77 +59,19 @@ public class ChatroomServer3 extends ServerSocket {
             while (true) {  
                 String msg = null;  
                 try {  
-                	System.out.println("001----获取消息队列中的消息");
                     msg = msgQueue.take();  
                 } catch (InterruptedException e) {  
                     e.printStackTrace();  
                 }  
-                if (msg != null) { 
-                	
-                	//将Map集合中的映射关系取出。存入到Set集合中。
-                    Set<Entry<String, Task>> entrySet = threadMap.entrySet();
-
-                    Iterator<Entry<String, Task>> it = entrySet.iterator();
-
-                    while(it.hasNext())
-                    {
-                        Entry<String, Task> me = it.next();
-                        String key = me.getKey();
-                        Task task = me.getValue();
-                        //发送map集合中的消息
-                        task.sendMsg(msg);
-                        System.out.println(key+":"+task);
-
-                    }
-                    
+                if (msg != null) {  
                     for (Task thread : threadList) {  
-                        thread.sendMsg(msg);  //如果获取到的消息不为空，则发送此消息
+                        thread.sendMsg(msg);  
                     }  
                 }  
             }  
         }  
   
     }  
-    /** 
-     * 从消息队列中取消息，再发送给聊天室所有成员 
-     */  
-    class PushMsgTaskLogin implements Runnable {  
-  
-        @Override  
-        public void run() {  
-            while (true) {  
-                String msg = null;  
-                try {  
-                    msg = msgQueue.take();  
-                } catch (InterruptedException e) {  
-                    e.printStackTrace();  
-                }  
-                if (msg != null) { 
-                	
-                	//将Map集合中的映射关系取出。存入到Set集合中。
-                    Set<Entry<String, Task>> entrySet = threadMap.entrySet();
-
-                    Iterator<Entry<String, Task>> it = entrySet.iterator();
-
-                    while(it.hasNext())
-                    {
-                        Entry<String, Task> me = it.next();
-                        String key = me.getKey();
-                        Task task = me.getValue();
-                        task.sendMsg(msg);
-                        System.out.println(key+":"+task);
-
-                    }
-                    
-                    for (Task thread : threadList) {  
-                        thread.sendMsg(msg);  
-                    }  
-                    
-                }  
-            }  
-        }  
-  
-    } 
   
     /** 
      * 处理客户端发来的消息线程类 
@@ -157,7 +84,7 @@ public class ChatroomServer3 extends ServerSocket {
   
         private Writer writer;  
   
-        private String port; // 连接客户端口号  
+        private String userName; // 成员名称  
   
         /** 
          * 构造函数<br> 
@@ -167,7 +94,7 @@ public class ChatroomServer3 extends ServerSocket {
          */  
         public Task(Socket socket) {  
             this.socket = socket;  
-            this.port = String.valueOf(socket.getPort());  
+            this.userName = String.valueOf(socket.getPort());  
             try {  
                 this.buff = new BufferedReader(new InputStreamReader(  
                         socket.getInputStream(), "UTF-8"));  
@@ -176,35 +103,31 @@ public class ChatroomServer3 extends ServerSocket {
             } catch (Exception e) {  
                 e.printStackTrace();  
             }  
-            portList.add(this.port);  
-            
-            
-            threadMap.put("login", this);
+            userList.add(this.userName);  
             threadList.add(this);  
-            pushMsg("【" + this.port + "连接成功】");  
+            pushMsg("【" + this.userName + "进入了聊天室】");  
             System.out.println("Form Cliect[port:" + socket.getPort() + "] "  
-                    + this.port + "连接成功");  
+                    + this.userName + "进入了聊天室");  
         }  
   
         @Override  
         public void run() {  
             try {  
                 while (true) {  
-                    String msg = buff.readLine();  //读取到客户端发送过来的消息
-                    //解析客户端发送过来的消息，例如登录，查询数据库，账号密码是否正确，正确，返回客户端登陆成功的信息
+                    String msg = buff.readLine();  
   
-                    if (VIEW_USER.equals(msg)) { // 查看连接成员列表  
+                    if (VIEW_USER.equals(msg)) { // 查看聊天室在线成员  
                         sendMsg(onlineUsers());  
                     } else if (END_MARK.equals(msg)) { // 遇到退出标识时就结束让客户端退出  
                         sendMsg(END_MARK);  
                         break;  
                     } else {  
-                        pushMsg(String.format("%1$shehe：%2$s", port, msg));  
+                        pushMsg(String.format("%1$s说：%2$s", userName, msg));  
                     }  
                 }  
             } catch (Exception e) {  
                 e.printStackTrace();  
-            } finally { // 关闭资源，移除连接成员  
+            } finally { // 关闭资源，聊天室移除成员  
                 try {  
                     writer.close();  
                     buff.close();  
@@ -212,13 +135,11 @@ public class ChatroomServer3 extends ServerSocket {
                 } catch (Exception e) {  
   
                 }  
-                portList.remove(port);  
-                
-                threadMap.remove(this);
+                userList.remove(userName);  
                 threadList.remove(this);  
-                pushMsg("【" + port + "断开连接】");  
+                pushMsg("【" + userName + "退出了聊天室】");  
                 System.out.println("Form Cliect[port:" + socket.getPort() + "] "  
-                        + port + "断开连接");  
+                        + userName + "退出了聊天室");  
             }  
         }  
   
@@ -251,16 +172,16 @@ public class ChatroomServer3 extends ServerSocket {
         }  
   
         /** 
-         * 已连接成员列表 
+         * 聊天室在线成员列表 
          *  
          * @return 
          */  
         private String onlineUsers() {  
             StringBuffer sbf = new StringBuffer();  
-            sbf.append("======== 连接成员成员列表(").append(portList.size())  
+            sbf.append("======== 在线成员列表(").append(userList.size())  
                     .append(") ========\015\012");  
-            for (int i = 0; i < portList.size(); i++) {  
-                sbf.append("[" + portList.get(i) + "]\015\012");  
+            for (int i = 0; i < userList.size(); i++) {  
+                sbf.append("[" + userList.get(i) + "]\015\012");  
             }  
             sbf.append("===============================");  
             return sbf.toString();  
@@ -275,11 +196,11 @@ public class ChatroomServer3 extends ServerSocket {
      */  
     public static void main(String[] args) {  
         try {  
-            ChatroomServer3 server = new ChatroomServer3(); // 启动服务端  
+            ChatroomServer server = new ChatroomServer(); // 启动服务端  
             server.load();  
         } catch (Exception e) {  
             e.printStackTrace();  
         }  
     }  
   
-} 
+}  

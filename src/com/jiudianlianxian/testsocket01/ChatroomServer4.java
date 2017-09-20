@@ -19,18 +19,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.security.auth.login.LoginContext;
 
+import com.alibaba.fastjson.JSON;
+import com.jiudianlianxian.bean.LoginRequestBean;
+
 /**
  * 
- * @Title: ChatroomServer3
+ * @Title: ChatroomServer4
  * @Description: 给此类一个描述
  * @Company: 济宁九点连线信息技术有限公司
  * @ProjectName: socket
  * @author fupengpeng
- * @date 2017年9月19日 下午2:20:40
+ * @date 2017年9月20日 上午9:21:36
  */
-public class ChatroomServer3 extends ServerSocket {  
+public class ChatroomServer4 extends ServerSocket {  
   
-    private static final int SERVER_PORT = 12371; // 服务端端口  
+    private static final int SERVER_PORT = 12301; // 服务端端口  
     private static final String END_MARK = "quit"; // 断开连接标识  
     private static final String VIEW_USER = "viewuser"; // 查看连接客户成员列表  
   
@@ -39,7 +42,7 @@ public class ChatroomServer3 extends ServerSocket {
     private static Map<String, Task> threadMap = new HashMap<String,Task>(); //服务器已启用线程集合
     private static BlockingQueue<String> msgQueue = new ArrayBlockingQueue<String>(500); // 存放消息的队列  
   
-    public ChatroomServer3() throws Exception {  
+    public ChatroomServer4() throws Exception {  
         super(SERVER_PORT);  
     }  
   
@@ -192,7 +195,14 @@ public class ChatroomServer3 extends ServerSocket {
                 while (true) {  
                     String msg = buff.readLine();  //读取到客户端发送过来的消息
                     //解析客户端发送过来的消息，例如登录，查询数据库，账号密码是否正确，正确，返回客户端登陆成功的信息
-  
+ 
+                    LoginRequestBean loginRequestBean = JSON.parseObject(msg,LoginRequestBean.class);
+                    System.out.println(loginRequestBean.toString());
+                    if ("login".equals(loginRequestBean.getTag())) {
+						//如果是登录请求，则获取到登录的用户名和密码，进行数据库查询数据，是否用户名和密码争取，如果正确，则返回个用户登录成功的提示
+                    	System.out.println("确认是登录请求，到数据库查询数据，验证用户名和密码是否正确");
+                    	pushMsg("确认是登录请求，到数据库查询数据，验证用户名和密码是否正确");
+					}
                     if (VIEW_USER.equals(msg)) { // 查看连接成员列表  
                         sendMsg(onlineUsers());  
                     } else if (END_MARK.equals(msg)) { // 遇到退出标识时就结束让客户端退出  
@@ -275,7 +285,7 @@ public class ChatroomServer3 extends ServerSocket {
      */  
     public static void main(String[] args) {  
         try {  
-            ChatroomServer3 server = new ChatroomServer3(); // 启动服务端  
+            ChatroomServer4 server = new ChatroomServer4(); // 启动服务端  
             server.load();  
         } catch (Exception e) {  
             e.printStackTrace();  

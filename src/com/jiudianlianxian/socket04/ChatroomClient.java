@@ -1,27 +1,15 @@
-package com.jiudianlianxian.testsocket01;
-
+package com.jiudianlianxian.socket04;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;  
-import java.io.OutputStreamWriter;  
-import java.io.Writer;  
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.Socket;
 
-import com.alibaba.fastjson.JSONObject;
-import com.jiudianlianxian.bean.LoginRequestBean;  
-  
-/**
- * @Title: ChatroomClient
- * @Description: Socket客户端  模拟聊天室，实现多人聊天     功能说明：信息共享
- * @Company: 济宁九点连线信息技术有限公司
- * @ProjectName: socket
- * @author fupengpeng
- * @date 2017年9月19日 下午2:55:37
- */
-public class ChatroomClient3 extends Socket {  
-  
+public class ChatroomClient extends Socket {  
+	  
     private static final String SERVER_IP = "127.0.0.1"; // 服务端IP  
-    private static final int SERVER_PORT = 12301; // 服务端端口  
+    private static final int SERVER_PORT = 8899; // 服务端端口  
     private static final String END_MARK = "quit"; // 退出聊天室标识  
   
     private Socket client;  
@@ -36,20 +24,11 @@ public class ChatroomClient3 extends Socket {
      * 与服务器建立连接 
      * @throws Exception 
      */  
-    public ChatroomClient3() throws Exception {  
+    public ChatroomClient() throws Exception {  
         super(SERVER_IP, SERVER_PORT);  
         this.client = this;  
-        System.out.println("Cliect[port:" + client.getLocalPort() + "] 您已成功连接");  
+        System.out.println("Cliect[port:" + client.getLocalPort() + "] 您已进入聊天室");  
     }  
-    
-    
-    public void login(){
-    	LoginRequestBean loginRequestBean = new LoginRequestBean("login","username","password");
-    	
-    	String jsonObject = JSONObject.toJSONString(loginRequestBean);
-    	System.out.println(jsonObject);
-    	
-    }
   
     /** 
      * 启动监听收取消息，循环可以不停的输入消息，将消息发送出去 
@@ -57,17 +36,11 @@ public class ChatroomClient3 extends Socket {
      */  
     public void load() throws Exception {  
         this.writer = new OutputStreamWriter(this.getOutputStream(), "UTF-8");  
-        new Thread(new ReceiveMsgTask()).start(); // 启动监听 
+        new Thread(new ReceiveMsgTask()).start(); // 启动监听  
   
         while(true) {  
             in = new BufferedReader(new InputStreamReader(System.in));  
-            System.out.println("输入消息并发送");
             String inputMsg = in.readLine();  
-            LoginRequestBean loginRequestBean = new LoginRequestBean("login","username","password");
-        	
-        	String jsonObject = JSONObject.toJSONString(loginRequestBean);
-        	System.out.println(jsonObject);
-        	writer.write(jsonObject);
             writer.write(inputMsg);  
             writer.write("\n");  
             writer.flush(); // 写完后要记得flush  
@@ -87,10 +60,8 @@ public class ChatroomClient3 extends Socket {
                 this.buff = new BufferedReader(new InputStreamReader(client.getInputStream(), "UTF-8"));  
                 while (true) {  
                     String result = buff.readLine();  
-                    //读取服务器发送过来的消息
-                    System.out.println("接收到服务器发送的消息，进行处理");
                     if (END_MARK.equals(result)) { // 遇到退出标识时表示服务端返回确认退出  
-                        System.out.println("Cliect[port:" + client.getLocalPort() + "] 您已断开连接");  
+                        System.out.println("Cliect[port:" + client.getLocalPort() + "] 您已退出聊天室");  
                         break;  
                     } else { // 输出服务端回复的消息  
                         System.out.println(result);  
@@ -118,10 +89,8 @@ public class ChatroomClient3 extends Socket {
      */  
     public static void main(String[] args) {  
         try {  
-            ChatroomClient3 client = new ChatroomClient3(); // 启动客户端  
-            client.login();
-            client.load(); 
-            
+            ChatroomClient client = new ChatroomClient(); // 启动客户端  
+            client.load();  
         } catch (Exception e) {  
             e.printStackTrace();  
         }  
